@@ -5,6 +5,7 @@ import PostConfirmationModal from './PostConfirmationModal.jsx';
 import ForSaleFree from './ForSaleFree/ForSaleFree.jsx';
 import Notifications from './Notifications.jsx';
 import ProfileMenu from './Profile Management/ProfileMenu.jsx';
+import Map from './Map/Map.jsx';
 import axios from 'axios';
 import { Send, MessageCircle } from 'lucide-react';
 import './Dashboard.css';
@@ -23,6 +24,7 @@ const Dashboard = () => {
   const [pendingPost, setPendingPost] = useState(null);
   const [user, setUser] = useState(null);
   const [neighborhood, setNeighborhood] = useState(null);
+  const [showMap, setShowMap] = useState(false);
 
 
   //Load user from local storage on component mount
@@ -222,18 +224,18 @@ const handleAddComment = async (postId, commentText) => {
 
   const renderSidebarButtons = () => {
     const buttons = [
-      { view: 'home', label: 'Home' },
-      { view: 'notifications', label: 'Notifications' },
-      { view: 'chats', label: 'Chats' },
-      { view: 'forsalefree', label: 'For Sale & Free' },
-      { view: 'post', label: 'Post' },
-      
+      { view: 'home', label: 'Home', onClick: () => { setCurrentView('home'); setShowMap(false); } },
+      { view: 'map', label: 'Map', onClick: () => { setCurrentView('map'); setShowMap(true); } },
+      { view: 'notifications', label: 'Notifications', onClick: () => { setCurrentView('notifications'); setShowMap(false); } },
+      { view: 'chats', label: 'Chats', onClick: () => { setCurrentView('chats'); setShowMap(false); } },
+      { view: 'forsalefree', label: 'For Sale & Free', onClick: () => { setCurrentView('forsalefree'); setShowMap(false); } },
+      { view: 'post', label: 'Post', onClick: () => { setCurrentView('post'); setShowMap(false); } }
     ];
 
     return buttons.map(button => (
       <button 
         key={button.view}
-        onClick={() => setCurrentView(button.view)}
+        onClick={button.onClick}
         className={currentView === button.view ? 'active' : ''}
       >
         {button.label}
@@ -425,6 +427,8 @@ const PostCard = ({ post, onLike, onComment }) => {
 
   const renderContent = () => {
     switch (currentView) {
+      case 'map':
+        return showMap && <Map />;
       case 'home':
         return (
           <div className="home-content">

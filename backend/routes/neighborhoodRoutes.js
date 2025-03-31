@@ -4,14 +4,16 @@ import {
   createNeighborhood,
   deleteNeighborhood, 
   updateNeighborhood,
-  getNeighborhoodById 
+  getNeighborhoodById,
+  getCurrentNeighborhood 
 } from '../controllers/neighborhoodController.js';
 import { protect, admin } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
 router.get('/', getAllNeighborhoods);
-router.get('/:neighborhoodId', protect, getNeighborhoodById); // Add this new route
+router.get('/current', protect, getCurrentNeighborhood);
+router.get('/:neighborhoodId', protect, getNeighborhoodById);
 router.post('/', protect, admin, createNeighborhood);
 router.put('/:neighborhoodId', protect, admin, updateNeighborhood);
 router.delete('/:neighborhoodId', protect, admin, deleteNeighborhood);

@@ -99,3 +99,28 @@ export const getNeighborhoodById = async (req, res) => {
     });
   }
 };
+
+export const getCurrentNeighborhood = async (req, res) => {
+  try {
+    // Get the current user's neighborhood ID from their profile
+    const user = await UserModel.findById(req.user._id);
+    
+    if (!user.neighborhoodId) {
+      return res.status(404).json({ message: 'User is not associated with any neighborhood' });
+    }
+
+    const neighborhood = await NeighborhoodModel.findById(user.neighborhoodId)
+      .populate('members', 'name email');
+      
+    if (!neighborhood) {
+      return res.status(404).json({ message: 'Neighborhood not found' });
+    }
+
+    res.status(200).json(neighborhood);
+  } catch (error) {
+    res.status(500).json({ 
+      message: 'Error fetching current neighborhood', 
+      error: error.message 
+    });
+  }
+};

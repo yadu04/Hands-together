@@ -10,6 +10,7 @@ import dashboardRoutes from './routes/dashboardRoutes.js';
 import postRoutes from './routes/postRoutes.js';
 import listingRoutes from './routes/listingRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
+import pointsOfInterestRoutes from './routes/pointsOfInterestRoutes.js';
 
 dotenv.config();
 const app = express();
@@ -30,6 +31,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/listings', listingRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/neighborhoods', pointsOfInterestRoutes);
 
 const PORT = process.env.PORT || 8000;
 
