@@ -1,3 +1,4 @@
+
 .listing-sidebar {
   width: 100%;
   background-color: var(--white);
@@ -9,6 +10,8 @@
   gap: 24px;
   align-items: center;
   margin-bottom: 24px;
+  position: relative;
+  z-index: 10;
 }
 
 /* View Mode Buttons */
@@ -54,6 +57,8 @@
   align-items: center;
   gap: 24px;
   flex-grow: 1;
+  flex-wrap: wrap;
+
 }
 
 .filter-section h3 {
@@ -76,6 +81,8 @@
   align-items: center;
   gap: 12px;
   min-width: 200px;
+  position: relative;
+
 }
 
 .filter-group label {
@@ -87,7 +94,7 @@
 
 .filter-group select {
   flex: 1;
-  padding: 10px;
+  padding: 10px 12px;
   border: 2px solid var(--light-gray);
   border-radius: 8px;
   font-family: var(--body-font);
@@ -103,6 +110,8 @@
   background-size: 16px;
   padding-right: 32px;
   min-width: 140px;
+  position: relative;
+  z-index: 5;
 }
 
 .filter-group select:hover {
@@ -113,6 +122,7 @@
   outline: none;
   border-color: var(--primary-blue);
   box-shadow: 0 0 0 2px rgba(55, 94, 151, 0.2);
+  z-index: 20;
 }
 
 /* Responsive Design */

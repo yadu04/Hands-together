@@ -556,6 +556,17 @@ const PostCard = ({ post, onLike, onComment }) => {
         onConfirm={confirmPost}
         postDetails={pendingPost || {}}
       />
+      <div className="image-gallery">
+     <div>
+      <img src="/TheImportanceOfCommunity.png" alt="Community Engagement" className="gallery-image" />
+      {/* <img src="/dine1.jpg" alt="Dining Experience" className="gallery-image" /> */}
+      {/* <img src="/goodpractice.jpg" alt="Good Practice" className="gallery-image" /> */}
+      <img src="/happymoving.jpg" alt="Happy Moving" className="gallery-image" />
+      <a href="https://migonline.com/blog/2023/04/07/the-7-best-ways-to-connect-with-your-new-neighbors/" target="_blank" rel="noopener noreferrer">
+        <img src="/7-ways.png" alt="Helping Hands" className="gallery-image" />
+      </a>
+    </div>
+  </div>
     </div>
   );
 };
