@@ -5,14 +5,14 @@ FROM node:22
 WORKDIR /app
 
 # Copy package.json and install dependencies
-COPY package.json ./
+COPY package.json package-lock.json ./
 RUN npm install
 
 # Copy the entire project
 COPY . .
 
 # Expose the port
-EXPOSE 5173
+EXPOSE 8000
 
-# Start the frontend
-CMD ["npm", "run", "dev"]
+# Start the backend server without nodemon
+CMD ["node", "server.js"]
