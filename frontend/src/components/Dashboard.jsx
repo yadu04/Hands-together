@@ -6,6 +6,7 @@ import ForSaleFree from './ForSaleFree/ForSaleFree.jsx';
 import Notifications from './Notifications.jsx';
 import ProfileMenu from './Profile Management/ProfileMenu.jsx';
 import Map from './Map/Map.jsx';
+import ChatContainer from './Chat/ChatContainer.jsx';
 import axios from 'axios';
 import { Send, MessageCircle } from 'lucide-react';
 import './Dashboard.css';
@@ -464,7 +465,7 @@ const PostCard = ({ post, onLike, onComment }) => {
         return (
           <div className="chats-content">
             <h2>Neighborhood Chats</h2>
-            <p>Chat feature coming soon!</p>
+            <ChatContainer />
           </div>
         );
       case 'post':

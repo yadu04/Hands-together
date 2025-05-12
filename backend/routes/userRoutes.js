@@ -21,8 +21,11 @@ router.get('/profile', protect, getUserProfile);
 router.put('/profile', protect, uploadProfilePic, updateProfile);
 router.get('/profile/picture/:userId', getProfilePic);
 
+// Get users by neighborhood (for chat functionality)
+router.get('/', protect, getUsers);
+
 //Admin routes
-router.get('/', protect,admin, getUsers);
-router.delete("/:userId", protect,deleteUser);
+router.get('/admin', protect, admin, getUsers);
+router.delete("/:userId", protect, deleteUser);
 
 export default router;

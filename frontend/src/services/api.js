@@ -132,17 +132,95 @@ export const fetchListings = (params) => {
   return API.get(`/listings?${queryString}`, getAuthHeader());
 };
 
-export const createListing = (listingData) => {
-  if (listingData instanceof FormData) {
-    return API.post('/listings', listingData, {
+export const createListing = async (listingData) => {
+  try {
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user || !user.neighborhoodId) {
+      return Promise.reject(new Error('No neighborhood ID found'));
+    }
+    
+    // If listingData is already FormData, just append neighborhoodId
+    if (listingData instanceof FormData) {
+      listingData.append('neighborhoodId', user.neighborhoodId);
+    } else {
+      // Create new FormData if regular object
+      const formData = new FormData();
+      Object.keys(listingData).forEach(key => {
+        formData.append(key, listingData[key]);
+      });
+      listingData = formData;
+    }
+    
+    return await API.post('/listings', listingData, {
       ...getAuthHeader(),
       headers: {
         ...getAuthHeader().headers,
         'Content-Type': 'multipart/form-data'
       }
     });
+  } catch (error) {
+    console.error('Error creating listing:', error);
+    throw error;
   }
-  return API.post('/listings', listingData, getAuthHeader());
+};
+
+// Chat API functions
+export const fetchUserChats = async () => {
+  try {
+    return await API.get('/chats', getAuthHeader());
+  } catch (error) {
+    console.error('Error fetching user chats:', error);
+    throw error;
+  }
+};
+
+export const fetchChatById = async (chatId) => {
+  try {
+    return await API.get(`/chats/${chatId}`, getAuthHeader());
+  } catch (error) {
+    console.error('Error fetching chat:', error);
+    throw error;
+  }
+};
+
+export const createNewChat = async (participantIds, isGroupChat = false, groupName = '') => {
+  try {
+    return await API.post('/chats', {
+      participantIds,
+      isGroupChat,
+      groupName
+    }, getAuthHeader());
+  } catch (error) {
+    console.error('Error creating chat:', error);
+    throw error;
+  }
+};
+
+export const sendChatMessage = async (chatId, content) => {
+  try {
+    return await API.post(`/chats/${chatId}/messages`, { content }, getAuthHeader());
+  } catch (error) {
+    console.error('Error sending message:', error);
+    throw error;
+  }
+};
+
+export const markChatAsRead = async (chatId) => {
+  try {
+    return await API.put(`/chats/${chatId}/read`, {}, getAuthHeader());
+  } catch (error) {
+    console.error('Error marking chat as read:', error);
+    throw error;
+  }
+};
+
+export const deleteUserChat = async (chatId) => {
+  try {
+    return await API.delete(`/chats/${chatId}`, getAuthHeader());
+  } catch (error) {
+    console.error('Error deleting chat:', error);
+    throw error;
+  }
 };
 
 export const deleteListing = (listingId) => {
