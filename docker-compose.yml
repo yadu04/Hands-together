@@ -5,6 +5,7 @@ services:
       - "8000:8000"
     env_file:
       - ./backend/.env
+    container_name: backend-service
     depends_on: []
   
   frontend:
@@ -13,3 +14,4 @@ services:
       - "5173:5173"
     depends_on:
       - backend
+    container_name: frontend-service
