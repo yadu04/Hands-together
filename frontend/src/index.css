@@ -13,3 +13,14 @@ body {
   display: flex;
   flex-direction: column;
 }
+
+
+.gemini-chat-container {
+  background: #101010;
+  border-radius: 12px;
+  padding: 20px;
+  height: 80vh;
+  color: white;
+  display: flex;
+  flex-direction: column;
+}

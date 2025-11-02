@@ -1,114 +1,122 @@
 import PointOfInterestModel from '../models/PointOfInterest.js';
 import NeighborhoodModel from '../models/Neighborhood.js';
+import { 
+  asyncHandler, 
+  validateRequired, 
+  checkResourceExists,
+  ValidationError,
+  NotFoundError
+} from '../middleware/errorHandler.js';
 
 // Get points of interest for a specific neighborhood with optional filtering
-export const getPointsOfInterest = async (req, res) => {
-  try {
-    const { neighborhoodId } = req.params;
-    const { filter } = req.query;
+export const getPointsOfInterest = asyncHandler(async (req, res) => {
+  const { neighborhoodId } = req.params;
+  const { filter } = req.query;
 
-    let query = { neighborhoodId };
-    if (filter && filter !== 'all') {
-      query.category = filter;
-    }
+  // Validate neighborhood exists
+  await checkResourceExists(NeighborhoodModel, neighborhoodId);
 
-    const points = await PointOfInterestModel.find(query);
-    res.json({ success: true, points });
-  } catch (error) {
-    console.error('Error fetching points of interest:', error);
-    res.status(500).json({ success: false, message: 'Error fetching points of interest' });
+  let query = { neighborhoodId };
+  if (filter && filter !== 'all') {
+    query.category = filter;
   }
-};
+
+  const points = await PointOfInterestModel.find(query);
+  
+  res.status(200).json({ 
+    success: true, 
+    points 
+  });
+});
 
 // Get current user's neighborhood with coordinates
-export const getCurrentNeighborhood = async (req, res) => {
-  try {
-    const userId = req.user._id;
-    const neighborhood = await NeighborhoodModel.findOne({
-      members: userId
-    });
+export const getCurrentNeighborhood = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+  
+  const neighborhood = await NeighborhoodModel.findOne({
+    members: userId
+  });
 
-    if (!neighborhood) {
-      return res.status(404).json({
-        success: false,
-        message: 'No neighborhood found for current user'
-      });
-    }
-
-    res.json({ success: true, neighborhood });
-  } catch (error) {
-    console.error('Error fetching current neighborhood:', error);
-    res.status(500).json({ success: false, message: 'Error fetching neighborhood data' });
+  if (!neighborhood) {
+    throw new NotFoundError('No neighborhood found for current user');
   }
-};
+
+  res.status(200).json({ 
+    success: true, 
+    neighborhood 
+  });
+});
 
 // Add a new point of interest
-export const addPointOfInterest = async (req, res) => {
-  try {
-    const { name, description, category, coordinates, address, contactInfo } = req.body;
-    const { neighborhoodId } = req.params;
+export const addPointOfInterest = asyncHandler(async (req, res) => {
+  const { name, description, category, coordinates, address, contactInfo } = req.body;
+  const { neighborhoodId } = req.params;
 
-    const newPoint = new PointOfInterestModel({
-      name,
-      description,
-      category,
-      coordinates,
-      neighborhoodId,
-      address,
-      contactInfo
-    });
+  // Validate required fields
+  validateRequired(req.body, ['name', 'category', 'coordinates']);
 
-    await newPoint.save();
-    res.status(201).json({ success: true, point: newPoint });
-  } catch (error) {
-    console.error('Error adding point of interest:', error);
-    res.status(500).json({ success: false, message: 'Error adding point of interest' });
+  // Validate neighborhood exists
+  await checkResourceExists(NeighborhoodModel, neighborhoodId);
+
+  // Validate coordinates format
+  if (!coordinates.lat || !coordinates.lng) {
+    throw new ValidationError('Coordinates must include lat and lng');
   }
-};
+
+  const newPoint = new PointOfInterestModel({
+    name,
+    description,
+    category,
+    coordinates,
+    neighborhoodId,
+    address,
+    contactInfo
+  });
+
+  await newPoint.save();
+  
+  res.status(201).json({ 
+    success: true, 
+    point: newPoint 
+  });
+});
 
 // Update a point of interest
-export const updatePointOfInterest = async (req, res) => {
-  try {
-    const { pointId } = req.params;
-    const updates = req.body;
+export const updatePointOfInterest = asyncHandler(async (req, res) => {
+  const { pointId } = req.params;
+  const updates = req.body;
 
-    const updatedPoint = await PointOfInterestModel.findByIdAndUpdate(
-      pointId,
-      updates,
-      { new: true }
-    );
+  // Check if point exists
+  const existingPoint = await checkResourceExists(PointOfInterestModel, pointId);
 
-    if (!updatedPoint) {
-      return res.status(404).json({
-        success: false,
-        message: 'Point of interest not found'
-      });
+  // Validate coordinates if provided
+  if (updates.coordinates) {
+    if (!updates.coordinates.lat || !updates.coordinates.lng) {
+      throw new ValidationError('Coordinates must include lat and lng');
     }
-
-    res.json({ success: true, point: updatedPoint });
-  } catch (error) {
-    console.error('Error updating point of interest:', error);
-    res.status(500).json({ success: false, message: 'Error updating point of interest' });
   }
-};
+
+  const updatedPoint = await PointOfInterestModel.findByIdAndUpdate(
+    pointId,
+    updates,
+    { new: true, runValidators: true }
+  );
+
+  res.status(200).json({ 
+    success: true, 
+    point: updatedPoint 
+  });
+});
 
 // Delete a point of interest
-export const deletePointOfInterest = async (req, res) => {
-  try {
-    const { pointId } = req.params;
+export const deletePointOfInterest = asyncHandler(async (req, res) => {
+  const { pointId } = req.params;
 
-    const deletedPoint = await PointOfInterestModel.findByIdAndDelete(pointId);
+  const deletedPoint = await checkResourceExists(PointOfInterestModel, pointId);
+  await PointOfInterestModel.findByIdAndDelete(pointId);
 
-    if (!deletedPoint) {
-      return res.status(404).json({
-        success: false,
-        message: 'Point of interest not found'
-      });
-    }
-
-    res.json({ success: true, message: 'Point of interest deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting point of interest:', error);
-    res.status(500).json({ success: false, message: 'Error deleting point of interest' });
-  }
-};
+  res.status(200).json({ 
+    success: true, 
+    message: 'Point of interest deleted successfully' 
+  });
+});

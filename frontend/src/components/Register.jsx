@@ -17,7 +17,12 @@ const Register = () => {
     const getNeighborhoods = async () => {
       try {
         const response = await fetchNeighborhoods(); // Fetch data
-        setNeighborhoods(response.data); // Update state
+        const list = Array.isArray(response.data)
+          ? response.data
+          : (response.data && Array.isArray(response.data.neighborhoods)
+              ? response.data.neighborhoods
+              : []);
+        setNeighborhoods(list); // Update state
       } catch (error) {
         console.error('Error fetching neighborhoods:', error.response?.data?.message || error.message);
       }
@@ -80,7 +85,7 @@ const Register = () => {
             required
           >
             <option value="">Select Neighborhood</option>
-            {neighborhoods.map((neighborhood) => (
+            {Array.isArray(neighborhoods) && neighborhoods.map((neighborhood) => (
               <option key={neighborhood._id} value={neighborhood._id}>
                 {neighborhood.name}
               </option>

@@ -1,126 +1,141 @@
 import NeighborhoodModel from "../models/Neighborhood.js";
 import UserModel from "../models/User.js";
+import { 
+  asyncHandler, 
+  validateRequired, 
+  checkResourceExists,
+  ValidationError,
+  NotFoundError
+} from "../middleware/errorHandler.js";
 
-export const getAllNeighborhoods = async (req, res) => {
-  try {
-    // Populate members with their details
-    const neighborhoods = await NeighborhoodModel.find({}).populate('members', 'name email');
-    res.status(200).json(neighborhoods);
-  } catch (error) {
-    res.status(500).json({ message: "Error fetching neighborhoods", error: error.message });
-  }
-};
+// Get all neighborhoods
+export const getAllNeighborhoods = asyncHandler(async (req, res) => {
+  const neighborhoods = await NeighborhoodModel.find({})
+    .populate('members', 'name email');
+  
+  res.status(200).json({
+    success: true,
+    neighborhoods
+  });
+});
 
-export const createNeighborhood = async (req, res) => {
+// Create a new neighborhood
+export const createNeighborhood = asyncHandler(async (req, res) => {
   const { name, description } = req.body;
 
-  if (!name) {
-    return res.status(400).json({ message: 'Neighborhood name is required' });
+  // Validate required fields
+  validateRequired(req.body, ['name']);
+
+  // Check if neighborhood with same name already exists
+  const existingNeighborhood = await NeighborhoodModel.findOne({ name });
+  if (existingNeighborhood) {
+    throw new ValidationError('Neighborhood with this name already exists');
   }
 
-  try {
-    const newNeighborhood = new NeighborhoodModel({ 
+  const newNeighborhood = new NeighborhoodModel({ 
+    name, 
+    description: description || '' 
+  });
+  
+  await newNeighborhood.save();
+  
+  res.status(201).json({
+    success: true,
+    neighborhood: newNeighborhood
+  });
+});
+
+// Delete a neighborhood
+export const deleteNeighborhood = asyncHandler(async (req, res) => {
+  const { neighborhoodId } = req.params;
+
+  // Check if neighborhood exists
+  const neighborhood = await checkResourceExists(NeighborhoodModel, neighborhoodId);
+
+  // Remove all users associated with this neighborhood
+  await UserModel.deleteMany({ neighborhoodId });
+
+  // Delete the neighborhood
+  await NeighborhoodModel.findByIdAndDelete(neighborhoodId);
+
+  res.status(200).json({ 
+    success: true,
+    message: 'Neighborhood and associated users deleted successfully' 
+  });
+});
+
+// Update a neighborhood
+export const updateNeighborhood = asyncHandler(async (req, res) => {
+  const { neighborhoodId } = req.params;
+  const { name, description } = req.body;
+
+  // Validate required fields
+  validateRequired(req.body, ['name']);
+
+  // Check if neighborhood exists
+  await checkResourceExists(NeighborhoodModel, neighborhoodId);
+
+  // Check if new name conflicts with existing neighborhood
+  if (name) {
+    const existingNeighborhood = await NeighborhoodModel.findOne({ 
       name, 
-      description: description || '' 
+      _id: { $ne: neighborhoodId } 
     });
-    await newNeighborhood.save();
-    res.status(201).json(newNeighborhood);
-  } catch (error) {
-    res.status(500).json({ message: 'Error creating neighborhood', error: error.message });
+    if (existingNeighborhood) {
+      throw new ValidationError('Neighborhood with this name already exists');
+    }
   }
-};
 
-export const deleteNeighborhood = async (req, res) => {
+  const updatedNeighborhood = await NeighborhoodModel.findByIdAndUpdate(
+    neighborhoodId, 
+    { name, description: description || '' }, 
+    { new: true, runValidators: true }
+  );
+
+  res.status(200).json({
+    success: true,
+    neighborhood: updatedNeighborhood
+  });
+});
+
+// Get neighborhood by ID
+export const getNeighborhoodById = asyncHandler(async (req, res) => {
   const { neighborhoodId } = req.params;
+  
+  if (!neighborhoodId) {
+    throw new ValidationError('Neighborhood ID is required');
+  }
 
-  try {
-    // First, remove all users associated with this neighborhood
-    await UserModel.deleteMany({ neighborhoodId });
-
-    // Then delete the neighborhood
-    const neighborhood = await NeighborhoodModel.findByIdAndDelete(neighborhoodId);
+  const neighborhood = await NeighborhoodModel.findById(neighborhoodId)
+    .populate('members', 'name email');
     
-    if (!neighborhood) {
-      return res.status(404).json({ message: 'Neighborhood not found' });
-    }
-
-    res.status(200).json({ message: 'Neighborhood and associated users deleted successfully' });
-  } catch (error) {
-    res.status(500).json({ message: 'Error deleting neighborhood', error: error.message });
-  }
-};
-
-export const updateNeighborhood = async (req, res) => {
-  const { neighborhoodId } = req.params;
-  const { name, description } = req.body;
-
-  if (!name) {
-    return res.status(400).json({ message: 'Neighborhood name is required' });
+  if (!neighborhood) {
+    throw new NotFoundError('Neighborhood');
   }
 
-  try {
-    const updatedNeighborhood = await NeighborhoodModel.findByIdAndUpdate(
-      neighborhoodId, 
-      { name, description: description || '' }, 
-      { new: true } // Return the updated document
-    );
+  res.status(200).json({
+    success: true,
+    neighborhood
+  });
+});
 
-    if (!updatedNeighborhood) {
-      return res.status(404).json({ message: 'Neighborhood not found' });
-    }
-
-    res.status(200).json(updatedNeighborhood);
-  } catch (error) {
-    res.status(500).json({ message: 'Error updating neighborhood', error: error.message });
+// Get current user's neighborhood
+export const getCurrentNeighborhood = asyncHandler(async (req, res) => {
+  const user = await UserModel.findById(req.user._id);
+  
+  if (!user.neighborhoodId) {
+    throw new NotFoundError('User is not associated with any neighborhood');
   }
-};
 
-
-export const getNeighborhoodById = async (req, res) => {
-  try {
-    const { neighborhoodId } = req.params;
+  const neighborhood = await NeighborhoodModel.findById(user.neighborhoodId)
+    .populate('members', 'name email');
     
-    if (!neighborhoodId) {
-      return res.status(400).json({ message: 'Neighborhood ID is required' });
-    }
-
-    const neighborhood = await NeighborhoodModel.findById(neighborhoodId)
-      .populate('members', 'name email');
-      
-    if (!neighborhood) {
-      return res.status(404).json({ message: 'Neighborhood not found' });
-    }
-
-    res.status(200).json(neighborhood);
-  } catch (error) {
-    res.status(500).json({ 
-      message: 'Error fetching neighborhood', 
-      error: error.message 
-    });
+  if (!neighborhood) {
+    throw new NotFoundError('Neighborhood');
   }
-};
 
-export const getCurrentNeighborhood = async (req, res) => {
-  try {
-    // Get the current user's neighborhood ID from their profile
-    const user = await UserModel.findById(req.user._id);
-    
-    if (!user.neighborhoodId) {
-      return res.status(404).json({ message: 'User is not associated with any neighborhood' });
-    }
-
-    const neighborhood = await NeighborhoodModel.findById(user.neighborhoodId)
-      .populate('members', 'name email');
-      
-    if (!neighborhood) {
-      return res.status(404).json({ message: 'Neighborhood not found' });
-    }
-
-    res.status(200).json(neighborhood);
-  } catch (error) {
-    res.status(500).json({ 
-      message: 'Error fetching current neighborhood', 
-      error: error.message 
-    });
-  }
-};
+  res.status(200).json({
+    success: true,
+    neighborhood
+  });
+});
